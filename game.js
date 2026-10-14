@@ -168,11 +168,11 @@ function buildSpaceBackground(){
  for(let i=0;i<45;i++){const x=(random()-.5)*span*1.6,y=Math.sin(x/span*9)*span*.025+(random()-.5)*span*.03;cloud(x,y,span*(.025+random()*.045),'#01040b85');}
  for(let i=0;i<1200;i++){const x=(random()-.5)*span*1.6,y=(random()+random()+random()-1.5)*span*.065;circle(c,x,y,.25+random()*.65);c.fillStyle='#e8e6ff'+Math.floor(25+random()*75).toString(16).padStart(2,'0');c.fill();}c.restore();
  cloud(W*.8,H*.25,span*.28,'#34516c28');cloud(W*.18,H*.77,span*.22,'#55365220');
- for(let i=0;i<650;i++){const x=random()*W,y=random()*H,r=.2+random()**5*1.5;c.fillStyle=['#e6efff','#ffe2bf','#bfdbff'][i%3];c.globalAlpha=.15+random()*.65;circle(c,x,y,r);c.fill();if(r>1.25){c.globalAlpha=.12;cloud(x,y,10,'#afcfff55');}}c.globalAlpha=1;
+ for(let i=0;i<650;i++){const x=random()*W,y=random()*H,r=.2+random()**5*1.5;c.fillStyle=['#e6efff','#ffe2bf','#bfdbff'][i%3];c.globalAlpha=.12+random()*.32;circle(c,x,y,r);c.fill();}c.globalAlpha=1;
  backgroundWidth=W;backgroundHeight=H;spaceBackground=layer;
 }
 function draw(){ctx.setTransform(dpr,0,0,dpr,0,0);if(!spaceBackground||backgroundWidth!==W||backgroundHeight!==H)buildSpaceBackground();ctx.drawImage(spaceBackground,0,0,W,H);
- for(const s of stars){const x=((s.x*W-player.x*s.z*.08)%W+W)%W,y=((s.y*H-player.y*s.z*.08)%H+H)%H;ctx.globalAlpha=.25+s.z*.7;ctx.fillStyle=s.z>.45?'#f2e5cf':'#d5e9ff';circle(ctx,x,y,s.r);ctx.fill();if(s.r>1.4){ctx.globalAlpha=.15;ctx.strokeStyle='#d5e9ff';ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(x-4,y);ctx.lineTo(x+4,y);ctx.moveTo(x,y-4);ctx.lineTo(x,y+4);ctx.stroke();}}ctx.globalAlpha=1;
+ // Stars are painted once into the fixed background; no moving subpixel star layer.
  const zoom=cameraZoom(),ox=W/2-player.x*zoom,oy=H*.55-player.y*zoom;
  ctx.save();ctx.translate(ox,oy);ctx.scale(zoom,zoom);
  for(const b of bodies){if((b.x-b.r*2)*zoom+ox>W||(b.x+b.r*2)*zoom+ox<0||(b.y-b.r*2)*zoom+oy>H||(b.y+b.r*2)*zoom+oy<0)continue;const p=b.progress/ABSORB_SECONDS,dx=b.x-player.x,dy=b.y-player.y;ctx.save();ctx.globalAlpha=b.appearance??1;ctx.translate(b.x,b.y);
