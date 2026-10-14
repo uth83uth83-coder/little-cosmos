@@ -89,7 +89,7 @@ function exploreRegions(){
  activeRegions=next;bodies=existing;
 }
 function reset(){currentZoom=targetZoom=initialCameraZoom();remainingTime=ROUND_SECONDS;updateTimer();player={x:0,y:0,m:10,r:radius(10),stage:0,variant:Math.floor(rand(0,5)),seed:rand(0,100),kx:0,ky:0};bodies=[];particles=[];time=0;spawnClock=0;bounceClock=0;regions=new Map();activeRegions=new Set();exploreRegions();updateHUD();}
-function updateHUD(){const s=STAGES[player.stage], next=STAGES[player.stage+1];$('stage').textContent=s.name;$('mass').textContent=player.m;$('growth').style.width=next?`${100*(player.m-s.min)/(next.min-s.min)}%`:'100%';$('next').textContent=next?`${formatMass(next.min)}에서 ${next.name}으로 변신 · 질량 포인트`:'블랙홀도 계속 성장해요 · 질량 포인트';}
+function updateHUD(){const s=STAGES[player.stage], next=STAGES[player.stage+1];$('stage').textContent=s.name;$('mass').textContent=formatMass(player.m);$('growth').style.width=next?`${100*(player.m-s.min)/(next.min-s.min)}%`:'100%';$('next').textContent=next?`${formatMass(next.min)}에서 ${next.name}으로 변신 · 질량 포인트`:'블랙홀도 계속 성장해요 · 질량 포인트';}
 function toast(msg){$('toast').textContent=msg;$('toast').classList.add('show');toastClock=3;}
 function speak(msg){if(sound&&'speechSynthesis'in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(msg);u.lang='ko-KR';u.rate=.85;speechSynthesis.speak(u);}}
 function burst(x,y,color,n=22){for(let i=0;i<n;i++){const a=rand(0,Math.PI*2),v=rand(20,110);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:1,color});}}
