@@ -13,6 +13,7 @@ let player, bodies=[],particles=[],stars=[], input={id:null,x:0,y:0,dx:0,dy:0}, 
 const PLAYER_SPEED=180, ABSORB_SECONDS=0.5, ROUND_SECONDS=180;
 let remainingTime=ROUND_SECONDS;
 const rand=(a,b)=>a+Math.random()*(b-a), clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+function formatMass(m){return new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(m);}
 function stageFor(m){let i=0;while(i<5&&m>=STAGES[i+1].min)i++;return i;}
 function gravityReach(){return 100*(player.r/radius(10));}
 function gravityRadius(){return player.r+gravityReach();}
@@ -88,7 +89,7 @@ function exploreRegions(){
  activeRegions=next;bodies=existing;
 }
 function reset(){currentZoom=targetZoom=initialCameraZoom();remainingTime=ROUND_SECONDS;updateTimer();player={x:0,y:0,m:10,r:radius(10),stage:0,variant:Math.floor(rand(0,5)),seed:rand(0,100),kx:0,ky:0};bodies=[];particles=[];time=0;spawnClock=0;bounceClock=0;regions=new Map();activeRegions=new Set();exploreRegions();updateHUD();}
-function updateHUD(){const s=STAGES[player.stage], next=STAGES[player.stage+1];$('stage').textContent=s.name;$('mass').textContent=player.m;$('growth').style.width=next?`${100*(player.m-s.min)/(next.min-s.min)}%`:'100%';$('next').textContent=next?`${next.min}에서 ${next.name}으로 변신 · 질량 포인트`:'블랙홀도 계속 성장해요 · 질량 포인트';}
+function updateHUD(){const s=STAGES[player.stage], next=STAGES[player.stage+1];$('stage').textContent=s.name;$('mass').textContent=player.m;$('growth').style.width=next?`${100*(player.m-s.min)/(next.min-s.min)}%`:'100%';$('next').textContent=next?`${formatMass(next.min)}에서 ${next.name}으로 변신 · 질량 포인트`:'블랙홀도 계속 성장해요 · 질량 포인트';}
 function toast(msg){$('toast').textContent=msg;$('toast').classList.add('show');toastClock=3;}
 function speak(msg){if(sound&&'speechSynthesis'in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(msg);u.lang='ko-KR';u.rate=.85;speechSynthesis.speak(u);}}
 function burst(x,y,color,n=22){for(let i=0;i<n;i++){const a=rand(0,Math.PI*2),v=rand(20,110);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:1,color});}}
@@ -176,11 +177,11 @@ function draw(){ctx.setTransform(dpr,0,0,dpr,0,0);if(!spaceBackground||backgroun
  ctx.save();ctx.translate(ox,oy);ctx.scale(zoom,zoom);
  for(const b of bodies){if((b.x-b.r*2)*zoom+ox>W||(b.x+b.r*2)*zoom+ox<0||(b.y-b.r*2)*zoom+oy>H||(b.y+b.r*2)*zoom+oy<0)continue;const p=b.progress/ABSORB_SECONDS,dx=b.x-player.x,dy=b.y-player.y;ctx.save();ctx.globalAlpha=b.appearance??1;ctx.translate(b.x,b.y);
   if(p>0){ctx.strokeStyle='#a6f4dd';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,b.r+9,-Math.PI/2,-Math.PI/2+Math.PI*2*p);ctx.stroke();ctx.save();ctx.rotate(Math.atan2(-dy,-dx));const stretch=player.stage>=3?1+p*2:1+p*.5;ctx.translate(b.r*p*.6,0);ctx.scale(stretch,1-p*.65);ctx.globalAlpha=1-p*.55;drawBody(ctx,b,b.r*(1-p*.35),time);ctx.restore();}else drawBody(ctx,b,b.r,time);
-  ctx.font=`700 ${15/zoom}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=b.m<player.m?'#b8f4d8':'#ffc0ae';ctx.shadowColor='#000';ctx.shadowBlur=5;ctx.fillText(b.m,0,-b.r-20/zoom);ctx.shadowBlur=0;ctx.restore();
+  ctx.font=`700 ${15/zoom}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=b.m<player.m?'#b8f4d8':'#ffc0ae';ctx.shadowColor='#000';ctx.shadowBlur=5;ctx.fillText(formatMass(b.m),0,-b.r-20/zoom);ctx.shadowBlur=0;ctx.restore();
   if(p>0){ctx.strokeStyle=`rgba(160,245,219,${p*.5})`;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.quadraticCurveTo((b.x+player.x)/2+Math.sin(time*4)*10,(b.y+player.y)/2,player.x,player.y);ctx.stroke();for(let j=0;j<4;j++){const f=(time*.6+j*.25)%1;circle(ctx,b.x+(player.x-b.x)*f,b.y+(player.y-b.y)*f,1.5);ctx.fillStyle='#baffeb';ctx.fill();}}
  }
  for(const p of particles){ctx.globalAlpha=p.life;ctx.fillStyle=p.color;circle(ctx,p.x,p.y,2*p.life);ctx.fill();}ctx.globalAlpha=1;
- ctx.save();ctx.translate(player.x,player.y);ctx.strokeStyle='#a6f4dd55';ctx.lineWidth=1.5/zoom;circle(ctx,0,0,gravityRadius());ctx.fillStyle='#a6f4dd12';ctx.fill();ctx.stroke();drawBody(ctx,player,player.r,time);ctx.textAlign='center';ctx.font=`700 ${20/zoom}px system-ui`;ctx.shadowColor='#000';ctx.shadowBlur=7;ctx.fillStyle='#fff';ctx.fillText(player.m,0,7/zoom);ctx.shadowBlur=0;ctx.fillStyle='#a6f4dd';ctx.font=`${10/zoom}px system-ui`;ctx.fillText('나의 천체',0,player.r+27/zoom);ctx.restore();ctx.restore();}
+ ctx.save();ctx.translate(player.x,player.y);ctx.strokeStyle='#a6f4dd55';ctx.lineWidth=1.5/zoom;circle(ctx,0,0,gravityRadius());ctx.fillStyle='#a6f4dd12';ctx.fill();ctx.stroke();drawBody(ctx,player,player.r,time);ctx.textAlign='center';ctx.font=`700 ${20/zoom}px system-ui`;ctx.shadowColor='#000';ctx.shadowBlur=7;ctx.fillStyle='#fff';ctx.fillText(formatMass(player.m),0,7/zoom);ctx.shadowBlur=0;ctx.fillStyle='#a6f4dd';ctx.font=`${10/zoom}px system-ui`;ctx.fillText('나의 천체',0,player.r+27/zoom);ctx.restore();ctx.restore();}
 function updateTimer(){const seconds=Math.ceil(remainingTime);$('remainingTime').textContent=`${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;}
 function advanceRound(dt){if(!started||paused)return;remainingTime=Math.max(0,remainingTime-dt);updateTimer();if(remainingTime===0){started=false;paused=false;clearInput();if('speechSynthesis'in window)speechSynthesis.cancel();$('pause').classList.add('hidden');$('book').classList.add('hidden');$('welcome').classList.remove('hidden');$('absorb').style.display='none';$('toast').classList.remove('show');$('pauseButton').textContent='Ⅱ';$('pauseButton').setAttribute('aria-label','일시 정지');reset();}}
 function loop(now){const elapsed=Math.max(0,(now-last)/1000||0),dt=Math.min(elapsed,.04);last=now;if(started&&!paused){advanceRound(elapsed);if(started)update(dt);}draw();requestAnimationFrame(loop);}
@@ -195,5 +196,5 @@ $('startButton').onclick=()=>{started=true;paused=false;$('welcome').classList.a
 $('pauseButton').onclick=()=>{if(started)setPause(!paused);};$('resumeButton').onclick=()=>setPause(false);$('resetButton').onclick=()=>{reset();setPause(false);};
 $('soundButton').onclick=()=>{sound=!sound;$('soundButton').textContent=sound?'음성 ON':'음성 OFF';$('soundButton').setAttribute('aria-label',sound?'음성 안내 끄기':'음성 안내 켜기');if(sound)speak('우주 탐험을 함께 해요!');else if('speechSynthesis'in window)speechSynthesis.cancel();};
 let bookWasPaused=false;$('bookButton').onclick=()=>{bookWasPaused=paused;paused=true;clearInput();$('book').classList.remove('hidden');};$('closeBook').onclick=()=>{$('book').classList.add('hidden');paused=bookWasPaused;};
-for(let i=0;i<STAGES.length;i++){const s=STAGES[i],row=document.createElement('div');row.className='entry';row.innerHTML=`<canvas width="128" height="128" aria-label="${s.name} 그림"></canvas><div><b>${s.name}</b><small>${s.min}부터 · ${s.examples}</small><p>${s.fact}</p></div>`;$('entries').append(row);const c=row.firstElementChild.getContext('2d');c.scale(2,2);c.translate(32,32);drawBody(c,{stage:i,variant:i===3?2:0,seed:5},i===5?16:22,0);}
+for(let i=0;i<STAGES.length;i++){const s=STAGES[i],row=document.createElement('div');row.className='entry';row.innerHTML=`<canvas width="128" height="128" aria-label="${s.name} 그림"></canvas><div><b>${s.name}</b><small>${formatMass(s.min)}부터 · ${s.examples}</small><p>${s.fact}</p></div>`;$('entries').append(row);const c=row.firstElementChild.getContext('2d');c.scale(2,2);c.translate(32,32);drawBody(c,{stage:i,variant:i===3?2:0,seed:5},i===5?16:22,0);}
 resize();reset();addEventListener('resize',resize);requestAnimationFrame(loop);
