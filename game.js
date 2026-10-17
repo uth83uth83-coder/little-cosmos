@@ -12,6 +12,7 @@ let W=0,H=0,dpr=1,started=false,paused=false,sound=false,last=0,time=0,spawnCloc
 let player, bodies=[],particles=[],stars=[], input={id:null,x:0,y:0,dx:0,dy:0}, keys=new Set();
 const PLAYER_SPEED=180, ABSORB_SECONDS=0.5, ROUND_SECONDS=180;
 let remainingTime=ROUND_SECONDS;
+let heading={x:0,y:-1},foodClock=0;
 const rand=(a,b)=>a+Math.random()*(b-a), clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 function formatMass(m){return new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(m);}
 function stageFor(m){let i=0;while(i<5&&m>=STAGES[i+1].min)i++;return i;}
@@ -88,7 +89,7 @@ function exploreRegions(){
  }
  activeRegions=next;bodies=existing;
 }
-function reset(){currentZoom=targetZoom=initialCameraZoom();remainingTime=ROUND_SECONDS;updateTimer();player={x:0,y:0,m:10,r:radius(10),stage:0,variant:Math.floor(rand(0,5)),seed:rand(0,100),kx:0,ky:0};bodies=[];particles=[];time=0;spawnClock=0;bounceClock=0;regions=new Map();activeRegions=new Set();exploreRegions();updateHUD();}
+function reset(){heading={x:0,y:-1};foodClock=0;clearInput();currentZoom=targetZoom=initialCameraZoom();remainingTime=ROUND_SECONDS;updateTimer();player={x:0,y:0,m:10,r:radius(10),stage:0,variant:Math.floor(rand(0,5)),seed:rand(0,100),kx:0,ky:0};bodies=[];particles=[];time=0;spawnClock=0;bounceClock=0;regions=new Map();activeRegions=new Set();exploreRegions();addSupportFood();addSupportFood();updateHUD();}
 function updateHUD(){const s=STAGES[player.stage], next=STAGES[player.stage+1];$('stage').textContent=s.name;$('mass').textContent=formatMass(player.m);$('growth').style.width=next?`${100*(player.m-s.min)/(next.min-s.min)}%`:'100%';$('next').textContent=next?`${formatMass(next.min)}에서 ${next.name}으로 변신 · 질량 포인트`:'블랙홀도 계속 성장해요 · 질량 포인트';}
 function toast(msg){$('toast').textContent=msg;$('toast').classList.add('show');toastClock=3;}
 function speak(msg){if(sound&&'speechSynthesis'in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(msg);u.lang='ko-KR';u.rate=.85;speechSynthesis.speak(u);}}
@@ -96,19 +97,31 @@ function burst(x,y,color,n=22){for(let i=0;i<n;i++){const a=rand(0,Math.PI*2),v=
 function absorb(b){player.m+=b.m;const old=player.stage;player.stage=stageFor(player.m);burst(b.x,b.y,STAGES[b.stage].color);if(old!==player.stage){player.variant=Math.floor(rand(0,5));player.seed=rand(0,100);toast(`${STAGES[player.stage].name}으로 변신했어요!`);speak(`${STAGES[player.stage].name}으로 변신했어요. ${STAGES[player.stage].fact}`);burst(player.x,player.y,'#a9f5df',45);}else{speak(`${b.m}을 모았어요. 이제 ${player.m}!`);}updateHUD();}
 function update(dt){animateGrowth(dt);animateCamera(dt);time+=dt;bounceClock=Math.max(0,bounceClock-dt);if(toastClock>0){toastClock-=dt;if(toastClock<=0)$('toast').classList.remove('show');}
  let dx=input.dx,dy=input.dy;if(keys.size){dx=(keys.has('ArrowRight')||keys.has('d')?1:0)-(keys.has('ArrowLeft')||keys.has('a')?1:0);dy=(keys.has('ArrowDown')||keys.has('s')?1:0)-(keys.has('ArrowUp')||keys.has('w')?1:0);const l=Math.hypot(dx,dy);if(l){dx/=l;dy/=l;}}
- player.x+=(dx*movementSpeed()+player.kx)*dt;player.y+=(dy*movementSpeed()+player.ky)*dt;player.kx*=Math.exp(-7*dt);player.ky*=Math.exp(-7*dt);
+ const steerLength=Math.hypot(dx,dy);if(steerLength>.12){heading.x=dx/steerLength;heading.y=dy/steerLength;}
+ player.x+=((started?heading.x:0)*movementSpeed()+player.kx)*dt;player.y+=((started?heading.y:0)*movementSpeed()+player.ky)*dt;player.kx*=Math.exp(-7*dt);player.ky*=Math.exp(-7*dt);
  let maxProgress=0;
  for(let i=bodies.length-1;i>=0;i--){const b=bodies[i];b.appearance=Math.min(1,(b.appearance??1)+dt/1.2);if(b.driftFactor){const oldSpeed=Math.hypot(b.vx,b.vy);if(oldSpeed>0){const target=bodySpeed(b.m,b.driftFactor),next=oldSpeed+(target-oldSpeed)*(1-Math.exp(-3*dt));b.vx*=next/oldSpeed;b.vy*=next/oldSpeed;}}if(b.inbound){const distance=Math.hypot(player.x-b.x,player.y-b.y);if(distance>player.r*.5){const speed=PLAYER_SPEED*b.inboundRatio/cameraZoom();b.vx=(player.x-b.x)/distance*speed;b.vy=(player.y-b.y)/distance*speed;}}b.x+=b.vx*dt;b.y+=b.vy*dt;
   let ax=b.x-player.x,ay=b.y-player.y,dist=Math.hypot(ax,ay),contact=player.r+b.r;
   if(b.m<player.m){const pullRadius=gravityRadius();if(dist<pullRadius&&dist>contact*.85){const force=(1-dist/pullRadius)*(90+player.stage*20);b.x-=ax/(dist||1)*force*dt;b.y-=ay/(dist||1)*force*dt;dist=Math.hypot(b.x-player.x,b.y-player.y);}
    if(dist<=pullRadius){b.progress+=dt;maxProgress=Math.max(maxProgress,b.progress);if(b.progress>=ABSORB_SECONDS){b.consumed=true;absorb(b);bodies.splice(i,1);continue;}}else b.progress=0;
   }else if(dist<contact){const nx=dist>0?ax/dist:1,ny=dist>0?ay/dist:0,overlap=contact-dist+2;player.x-=nx*overlap;player.y-=ny*overlap;player.kx=-nx*245;player.ky=-ny*245;b.vx=nx*PLAYER_SPEED*.28;b.vy=ny*PLAYER_SPEED*.28;if(bounceClock===0){toast('통통! 더 작은 숫자를 찾아봐요');burst(player.x,player.y,'#ffb59c',12);bounceClock=1.2;}b.progress=0;}
-  if(!activeRegions.has(b.regionKey)){bodies.splice(i,1);}
+  if(!activeRegions.has(b.regionKey)||b.supportFood&&Math.hypot(b.x-player.x,b.y-player.y)>despawnRadius(b)){bodies.splice(i,1);}
  }
  $('absorb').style.display=maxProgress>0?'block':'none';$('seconds').textContent=`${Math.max(0,ABSORB_SECONDS-maxProgress).toFixed(1)}초`;$('absorbBar').style.width=`${maxProgress/ABSORB_SECONDS*100}%`;
  spawnClock+=dt;if(spawnClock>=.5){exploreRegions();spawnClock=0;}
+ if(started){foodClock+=dt;if(foodClock>=2.5){const nearbyFood=bodies.filter(b=>!b.consumed&&b.m<player.m&&Math.hypot(b.x-player.x,b.y-player.y)<spawnRingRadius()*1.2);if(nearbyFood.length<4&&bodies.filter(b=>b.supportFood).length<4)addSupportFood();foodClock=0;}}
  separateBodies(dt);
  for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(p.life<=0)particles.splice(i,1);}
+}
+function addSupportFood(){
+ const m=Math.max(1,Math.min(player.m-1,Math.round(player.m*rand(.25,.55))));
+ const angle=Math.atan2(heading.y,heading.x)+rand(-.65,.65);
+ const distance=gravityRadius()*1.2+radius(m)+24/cameraZoom();
+ const x=player.x+Math.cos(angle)*distance,y=player.y+Math.sin(angle)*distance;
+ if(bodies.some(b=>Math.hypot(b.x-x,b.y-y)<collisionRadius(b)+radius(m)+10))return;
+ const b=makeBody(m,x,y);b.regionKey='support-food';b.supportFood=true;b.appearance=0;b.driftFactor=.1;
+ b.vx=Math.cos(angle+Math.PI/2)*bodySpeed(m,.1);b.vy=Math.sin(angle+Math.PI/2)*bodySpeed(m,.1);
+ bodies.push(b);activeRegions.add(b.regionKey);
 }
 function collisionRadius(b){return b.r*(b.stage===5||b.stage===3&&b.variant===2?1.75:1)+3;}
 function separateBodies(dt=1/60){
