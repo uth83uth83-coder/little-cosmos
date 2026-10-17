@@ -184,6 +184,13 @@ function buildSpaceBackground(){
  for(let i=0;i<650;i++){const x=random()*W,y=random()*H,r=.2+random()**5*1.5;c.fillStyle=['#e6efff','#ffe2bf','#bfdbff'][i%3];c.globalAlpha=.12+random()*.32;circle(c,x,y,r);c.fill();}c.globalAlpha=1;
  backgroundWidth=W;backgroundHeight=H;spaceBackground=layer;
 }
+function drawHeading(c,zoom){
+ if(!started)return;
+ const outer=player.r*(player.stage===5||player.stage===3&&player.variant===2?1.75:1.15);
+ c.save();c.rotate(Math.atan2(heading.y,heading.x));c.translate(outer+22/zoom,0);c.scale(1/zoom,1/zoom);
+ c.fillStyle='#a6f4dd';c.strokeStyle='#102b32';c.lineWidth=1.5;c.lineJoin='round';
+ c.beginPath();c.moveTo(10,0);c.lineTo(-7,-8);c.lineTo(-3,0);c.lineTo(-7,8);c.closePath();c.fill();c.stroke();c.restore();
+}
 function draw(){ctx.setTransform(dpr,0,0,dpr,0,0);if(!spaceBackground||backgroundWidth!==W||backgroundHeight!==H)buildSpaceBackground();ctx.drawImage(spaceBackground,0,0,W,H);
  // Stars are painted once into the fixed background; no moving subpixel star layer.
  const zoom=cameraZoom(),ox=W/2-player.x*zoom,oy=H*.55-player.y*zoom;
@@ -194,7 +201,7 @@ function draw(){ctx.setTransform(dpr,0,0,dpr,0,0);if(!spaceBackground||backgroun
   if(p>0){ctx.strokeStyle=`rgba(160,245,219,${p*.5})`;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.quadraticCurveTo((b.x+player.x)/2+Math.sin(time*4)*10,(b.y+player.y)/2,player.x,player.y);ctx.stroke();for(let j=0;j<4;j++){const f=(time*.6+j*.25)%1;circle(ctx,b.x+(player.x-b.x)*f,b.y+(player.y-b.y)*f,1.5);ctx.fillStyle='#baffeb';ctx.fill();}}
  }
  for(const p of particles){ctx.globalAlpha=p.life;ctx.fillStyle=p.color;circle(ctx,p.x,p.y,2*p.life);ctx.fill();}ctx.globalAlpha=1;
- ctx.save();ctx.translate(player.x,player.y);ctx.strokeStyle='#a6f4dd55';ctx.lineWidth=1.5/zoom;circle(ctx,0,0,gravityRadius());ctx.fillStyle='#a6f4dd12';ctx.fill();ctx.stroke();drawBody(ctx,player,player.r,time);ctx.textAlign='center';ctx.font=`700 ${20/zoom}px system-ui`;ctx.shadowColor='#000';ctx.shadowBlur=7;ctx.fillStyle='#fff';ctx.fillText(formatMass(player.m),0,7/zoom);ctx.shadowBlur=0;ctx.fillStyle='#a6f4dd';ctx.font=`${10/zoom}px system-ui`;ctx.fillText('나의 천체',0,player.r+27/zoom);ctx.restore();ctx.restore();}
+ ctx.save();ctx.translate(player.x,player.y);ctx.strokeStyle='#a6f4dd55';ctx.lineWidth=1.5/zoom;circle(ctx,0,0,gravityRadius());ctx.fillStyle='#a6f4dd12';ctx.fill();ctx.stroke();drawBody(ctx,player,player.r,time);drawHeading(ctx,zoom);ctx.textAlign='center';ctx.font=`700 ${20/zoom}px system-ui`;ctx.shadowColor='#000';ctx.shadowBlur=7;ctx.fillStyle='#fff';ctx.fillText(formatMass(player.m),0,7/zoom);ctx.shadowBlur=0;ctx.fillStyle='#a6f4dd';ctx.font=`${10/zoom}px system-ui`;ctx.fillText('나의 천체',0,player.r+27/zoom);ctx.restore();ctx.restore();}
 function updateTimer(){const seconds=Math.ceil(remainingTime);$('remainingTime').textContent=`${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;}
 function advanceRound(dt){if(!started||paused)return;remainingTime=Math.max(0,remainingTime-dt);updateTimer();if(remainingTime===0){started=false;paused=false;clearInput();if('speechSynthesis'in window)speechSynthesis.cancel();$('pause').classList.add('hidden');$('book').classList.add('hidden');$('welcome').classList.remove('hidden');$('absorb').style.display='none';$('toast').classList.remove('show');$('pauseButton').textContent='Ⅱ';$('pauseButton').setAttribute('aria-label','일시 정지');reset();}}
 function loop(now){const elapsed=Math.max(0,(now-last)/1000||0),dt=Math.min(elapsed,.04);last=now;if(started&&!paused){advanceRound(elapsed);if(started)update(dt);}draw();requestAnimationFrame(loop);}
