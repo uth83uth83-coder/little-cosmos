@@ -12,7 +12,7 @@
 </head>
 <body>
 <canvas id="space" aria-label="천체를 움직여 작은 천체를 모으는 우주 게임"></canvas>
-<header><div class="brand"><span class="mark">✦</span><div>작은 우주 탐험<small>LITTLE COSMOS</small></div></div><div class="round-timer" aria-label="남은 플레이 시간"><small>남은 시간</small><strong id="remainingTime" role="timer">3:00</strong></div><button id="bookButton" aria-label="천체 도감">도감</button><button id="pauseButton" aria-label="일시 정지">Ⅱ</button></header>
+<header><div class="brand"><span class="mark">✦</span><div>작은 우주 탐험<small>LITTLE COSMOS</small></div></div><div class="round-timer" aria-label="남은 플레이 시간"><small>남은 시간</small><strong id="remainingTime" role="timer">2:00</strong></div><button id="bookButton" aria-label="천체 도감">도감</button><button id="pauseButton" aria-label="일시 정지">Ⅱ</button></header>
 <main id="hud"><div class="eyebrow">나의 천체</div><div class="status"><h1 id="stage">소행성</h1><strong id="mass">10</strong></div><div class="track"><i id="growth"></i></div><p id="next"></p></main>
 <div id="toast" role="status"></div>
 <div id="absorb"><span>천체를 모으는 중</span><strong id="seconds">0.5초</strong><div class="track"><i id="absorbBar"></i></div></div>
@@ -20,7 +20,10 @@
 <div id="joystick"><i></i></div>
 <section class="overlay" id="welcome"><div class="welcome-card"><div class="eyebrow">우리의 첫 우주 여행</div><h2>작은 돌에서,<br><em>빛나는 우주로.</em></h2><p>자동으로 나아가요. 손가락으로 방향을 바꿔요.<br>더 큰 숫자를 만나면 통통 튕겨 나와요!</p><div class="rules"><span><b>10</b> 작은 소행성으로 출발</span><span><b>0.5초</b> 원 안에 있으면 흡수 완료</span><span><b>✦</b> 모을수록 새로운 천체로 변신</span></div><button class="primary" id="startButton">우주 탐험 시작 <span>→</span></button><small>변신 순서와 숫자는 게임 설정이에요.</small></div></section>
 <section class="overlay hidden" id="pause"><div class="panel"><div class="eyebrow">잠깐 쉬어 가요</div><h2>우주가 기다리고 있어요</h2><button class="primary" id="resumeButton">계속 탐험하기</button><button class="secondary" id="resetButton">처음부터 시작</button></div></section>
-<section class="overlay hidden" id="book"><div class="panel book"><div class="book-head"><div><div class="eyebrow">COSMIC COLLECTION</div><h2>천체 도감</h2></div><button id="closeBook">닫기 ✕</button></div><p>이 순서는 게임 속 변신 순서예요. 실제 천체는 종류만으로 크기나 중력 순서를 정할 수 없어요.</p><div id="entries"></div><aside>질량이 커지면 같은 거리에서 더 강하게 끌어당겨요. 블랙홀은 모든 것을 멀리서 빨아들이는 진공청소기가 아니에요.<br><br>백색왜성은 핵융합을 마친 항성의 잔해예요. 행성 단계의 늘어나는 흡수 효과는 게임 연출이며, 실제 스파게티화는 강한 중력 차이로 생겨요.</aside><div class="sources">과학 참고: <a href="https://science.nasa.gov/solar-system/" target="_blank" rel="noopener">NASA 태양계</a> · <a href="https://science.nasa.gov/universe/black-holes/" target="_blank" rel="noopener">블랙홀</a></div></div></section>
-<script src="game.js?v=direction-arrow4"></script>
+<section class="overlay hidden" id="book" role="dialog" aria-modal="true" aria-label="천체 수집 도감"><div class="panel book"><div class="book-head"><div><div class="eyebrow">COSMIC COLLECTION</div><h2>나의 천체 도감</h2><p id="collectionCount"></p></div><button id="closeBook">닫기 ✕</button></div><p>2분 탐험을 마치면 전체 도감에서 무작위로 카드 한 장을 발견해요. 아직 없는 카드를 먼저 찾아요!</p><nav id="catalogTabs" aria-label="도감 분류"></nav><div id="entries"></div><p id="collectionStorageNote" class="storage-note"></p><aside>천체의 실제 분류를 소개하는 도감이에요. 게임 변신 순서와 질량 포인트는 실제 천체의 진화나 물리 단위와 달라요. 실제 관측 이미지가 있는 천체는 사진과 출처를 보여줘요. 사진이 없는 천체는 게임 그림으로 표시해요.</aside><section id="cardDetail" class="hidden"><button id="closeDetail">목록으로 돌아가기</button><div id="detailArt"></div><h2 id="detailName" tabindex="-1"></h2><p id="detailCategory"></p><p id="detailFact"></p><button id="readCard">설명 들어보기 ♪</button><small id="detailArtNote"></small><a id="detailSource" target="_blank" rel="noopener">NASA 과학 자료 보기 ↗</a></section></div></section>
+<section class="overlay hidden" id="reward" role="dialog" aria-modal="true" aria-labelledby="rewardTitle"><div class="panel reward-panel"><div class="eyebrow">탐험 완료 · 오늘의 발견</div><h2 id="rewardTitle">새로운 천체 발견!</h2><p id="rewardSummary"></p><div id="rewardArt"></div><h3 id="rewardName"></h3><p id="rewardFact"></p><small>분류를 표현한 게임 그림 · 실제 사진이 아니에요</small><p id="rewardSave" role="status"></p><button class="primary" id="rewardBook">도감에서 자세히 보기</button><button class="secondary" id="rewardHome">시작 화면으로</button></div></section>
+<script src="catalog.js"></script>
+<script src="game.js?v=collection5"></script>
+<script src="collection-ui.js"></script>
 <script src="webapp.js"></script>
 </body></html>

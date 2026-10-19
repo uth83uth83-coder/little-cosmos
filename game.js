@@ -10,7 +10,7 @@ const STAGES = [
 const $=id=>document.getElementById(id), canvas=$('space'), ctx=canvas.getContext('2d');
 let W=0,H=0,dpr=1,started=false,paused=false,sound=false,last=0,time=0,spawnClock=0,toastClock=0,bounceClock=0;
 let player, bodies=[],particles=[],stars=[], input={id:null,x:0,y:0,dx:0,dy:0}, keys=new Set();
-const PLAYER_SPEED=180, ABSORB_SECONDS=0.5, ROUND_SECONDS=180;
+const PLAYER_SPEED=180, ABSORB_SECONDS=0.5, ROUND_SECONDS=120;
 let remainingTime=ROUND_SECONDS;
 let heading={x:0,y:-1},foodClock=0;
 const rand=(a,b)=>a+Math.random()*(b-a), clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -203,7 +203,7 @@ function draw(){ctx.setTransform(dpr,0,0,dpr,0,0);if(!spaceBackground||backgroun
  for(const p of particles){ctx.globalAlpha=p.life;ctx.fillStyle=p.color;circle(ctx,p.x,p.y,2*p.life);ctx.fill();}ctx.globalAlpha=1;
  ctx.save();ctx.translate(player.x,player.y);ctx.strokeStyle='#a6f4dd55';ctx.lineWidth=1.5/zoom;circle(ctx,0,0,gravityRadius());ctx.fillStyle='#a6f4dd12';ctx.fill();ctx.stroke();drawBody(ctx,player,player.r,time);drawHeading(ctx,zoom);ctx.textAlign='center';ctx.font=`700 ${20/zoom}px system-ui`;ctx.shadowColor='#000';ctx.shadowBlur=7;ctx.fillStyle='#fff';ctx.fillText(formatMass(player.m),0,7/zoom);ctx.shadowBlur=0;ctx.fillStyle='#a6f4dd';ctx.font=`${10/zoom}px system-ui`;ctx.fillText('나의 천체',0,player.r+27/zoom);ctx.restore();ctx.restore();}
 function updateTimer(){const seconds=Math.ceil(remainingTime);$('remainingTime').textContent=`${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;}
-function advanceRound(dt){if(!started||paused)return;remainingTime=Math.max(0,remainingTime-dt);updateTimer();if(remainingTime===0){started=false;paused=false;clearInput();if('speechSynthesis'in window)speechSynthesis.cancel();$('pause').classList.add('hidden');$('book').classList.add('hidden');$('welcome').classList.remove('hidden');$('absorb').style.display='none';$('toast').classList.remove('show');$('pauseButton').textContent='Ⅱ';$('pauseButton').setAttribute('aria-label','일시 정지');reset();}}
+function advanceRound(dt){if(!started||paused)return;remainingTime=Math.max(0,remainingTime-dt);updateTimer();if(remainingTime===0)finishRound();}
 function loop(now){const elapsed=Math.max(0,(now-last)/1000||0),dt=Math.min(elapsed,.04);last=now;if(started&&!paused){advanceRound(elapsed);if(started)update(dt);}draw();requestAnimationFrame(loop);}
 function clearInput(){input.id=null;input.dx=input.dy=0;keys.clear();$('joystick').style.display='none';$('joystick').firstElementChild.style.transform='translate(0px,0px)';}
 canvas.addEventListener('pointerdown',e=>{if(!started||paused||input.id!==null)return;input.id=e.pointerId;input.x=e.clientX;input.y=e.clientY;canvas.setPointerCapture(e.pointerId);$('joystick').style.display='block';$('joystick').style.left=`${e.clientX-50}px`;$('joystick').style.top=`${e.clientY-50}px`;});
@@ -215,6 +215,5 @@ function setPause(value){paused=value;clearInput();$('pause').classList.toggle('
 $('startButton').onclick=()=>{started=true;paused=false;$('welcome').classList.add('hidden');toast('초록 숫자는 모으고, 주황 숫자는 피해요');speak('작은 숫자를 중력 원 안에 영 점 오 초 동안 두면 모을 수 있어요.');};
 $('pauseButton').onclick=()=>{if(started)setPause(!paused);};$('resumeButton').onclick=()=>setPause(false);$('resetButton').onclick=()=>{reset();setPause(false);};
 $('soundButton').onclick=()=>{sound=!sound;$('soundButton').textContent=sound?'음성 ON':'음성 OFF';$('soundButton').setAttribute('aria-label',sound?'음성 안내 끄기':'음성 안내 켜기');if(sound)speak('우주 탐험을 함께 해요!');else if('speechSynthesis'in window)speechSynthesis.cancel();};
-let bookWasPaused=false;$('bookButton').onclick=()=>{bookWasPaused=paused;paused=true;clearInput();$('book').classList.remove('hidden');};$('closeBook').onclick=()=>{$('book').classList.add('hidden');paused=bookWasPaused;};
-for(let i=0;i<STAGES.length;i++){const s=STAGES[i],row=document.createElement('div');row.className='entry';row.innerHTML=`<canvas width="128" height="128" aria-label="${s.name} 그림"></canvas><div><b>${s.name}</b><small>${formatMass(s.min)}부터 · ${s.examples}</small><p>${s.fact}</p></div>`;$('entries').append(row);const c=row.firstElementChild.getContext('2d');c.scale(2,2);c.translate(32,32);drawBody(c,{stage:i,variant:i===3?2:0,seed:5},i===5?16:22,0);}
+let bookWasPaused=false;
 resize();reset();addEventListener('resize',resize);requestAnimationFrame(loop);
